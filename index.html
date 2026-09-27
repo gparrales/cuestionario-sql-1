@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuestionario de Bases de Datos y SQL</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --correct: #22c55e;
+    --incorrect: #ef4444;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(160deg, var(--bg), #1e1b4b 120%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  header p { color: var(--muted); margin: 0; font-size: 0.9rem; }
+
+  .progress-bar {
+    background: var(--border);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 0%;
+    transition: width .3s ease;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  }
+  .question-text { font-size: 1.1rem; line-height: 1.5; margin: 0 0 16px; }
+  .hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: rgba(99,102,241,0.1);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 18px;
+  }
+
+  .option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #0f172a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: border-color .15s, background .15s, transform .1s;
+  }
+  .option:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+  .option:disabled { cursor: default; }
+  .option.correct { background: rgba(34,197,94,0.15); border-color: var(--correct); }
+  .option.incorrect { background: rgba(239,68,68,0.15); border-color: var(--incorrect); }
+  .option .tag { font-weight: 600; margin-right: 6px; }
+
+  .feedback {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--correct); }
+  .feedback.bad { background: rgba(239,68,68,0.12); border: 1px solid var(--incorrect); }
+  .feedback strong { display: block; margin-bottom: 4px; }
+
+  .actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+  button.next {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  button.next.show { opacity: 1; pointer-events: auto; }
+
+  .result { text-align: center; }
+  .result .score { font-size: 3rem; font-weight: 700; margin: 10px 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .result p { color: var(--muted); }
+  .restart {
+    margin-top: 20px;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  footer { text-align: center; margin-top: 24px; color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📊 Cuestionario: Bases de Datos y SQL</h1>
+    <p>Evalúa tus conocimientos — selecciona una opción para ver si es correcta</p>
+  </header>
+
+  <div class="meta-row">
+    <span id="qCounter">Pregunta 1 de 40</span>
+    <span id="scoreCounter">Aciertos: 0</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card" id="quizCard"></div>
+
+  <footer>Cuestionario interactivo — Geekerds / Tutores593</footer>
+</div>
+
+<script>
+const QUESTIONS = [{"q": "¿Cuál es la definición fundamental de un 'dato' según el material proporcionado?", "hint": "Piense en el estado del elemento antes de que se le aplique cualquier tipo de estructura o lógica.", "options": ["Un reporte final de una consulta.", "Un hecho sin procesar ni organizar.", "Información organizada sistemáticamente.", "Una colección de conclusiones extraídas."], "correct": 1, "explanation": "Los datos se describen como elementos primarios que aún no han sido estructurados para transmitir un significado específico."}, {"q": "¿Qué sucede con los datos cuando se organizan de forma sistemática?", "hint": "Considere la diferencia entre tener piezas sueltas y tener un conjunto estructurado que permite extraer conclusiones.", "options": ["Se convierten en información.", "Pierden su valor para la consulta.", "Se eliminan automáticamente del sistema.", "Se transforman en archivos planos."], "correct": 0, "explanation": "La organización sistemática permite que los hechos aislados cobren sentido y utilidad como información."}, {"q": "De acuerdo con la evolución de las bases de datos", "hint": "¿qué modelo es el más adecuado para manejar grandes volúmenes y variedad de datos actualmente?", "options": ["Piense en las soluciones diseñadas para big data y datos no estructurados en la era digital.", "Modelo Jerárquico.", "Modelo NoSQL.", "Modelo Relacional."], "correct": 12, "explanation": "B. Modelo NoSQL."}, {"q": "En el caso de un camionero que distribuye muchos paquetes, pero cada paquete solo es distribuido por un camionero, ¿qué tipo de relación existe?", "hint": "Analice cuántos paquetes puede tener un camionero y cuántos camioneros puede tener un solo paquete.", "options": ["Muchos a muchos (M:N)", "Uno a uno (1:1)", "Muchos a uno (N:1 desde la perspectiva del camionero)", "Uno a muchos (1:N)"], "correct": 3, "explanation": "Un solo camionero se vincula con múltiples paquetes"}, {"q": "¿Cuál es el propósito principal de una base de datos según las definiciones presentadas?", "hint": "Considere para qué se recopilan y almacenan los datos en cualquier organización.", "options": ["Generar únicamente gráficos estadísticos.", "Proporcionar entretenimiento digital.", "Almacenar y administrar información para la toma de decisiones.", "Eliminar la necesidad de utilizar computadoras."], "correct": 2, "explanation": "El objetivo central es permitir la consulta eficiente y el análisis para sustentar acciones organizacionales."}, {"q": "Si un camionero puede conducir diferentes camiones en fechas distintas y un camión puede ser conducido por varios camioneros", "hint": "¿qué tipo de relación se establece?", "options": ["Note que ambas entidades pueden conectarse con múltiples instancias de la otra.", "Relación Nula.", "Uno a uno (1:1)", "Uno a muchos (1:N)"], "correct": 12, "explanation": "D. Muchos a muchos (M:N)"}, {"q": "En el diseño de una tabla para personas", "hint": "¿cuál de los siguientes sería un ejemplo de un campo numérico?", "options": ["Identifique cuál de los datos corresponde estrictamente a un valor cuantificable y no a un texto.", "Dirección", "Edad", "Nombre"], "correct": 2, "explanation": "B. Edad"}, {"q": "¿A qué categoría pertenece un dato que consiste en una grabación de voz o un sonido?", "hint": "Recuerde los tipos de datos que van más allá del texto y los números tradicionales.", "options": ["Alfabético", "Multimedia", "Numérico", "Alfanumérico"], "correct": 1, "explanation": "Los sonidos"}, {"q": "¿Cuál es la función de una 'Clave Foránea' (Foreign Key) en una base de datos relacional?", "hint": "Piense en cómo se conectan dos tablas distintas de forma lógica.", "options": ["Garantizar que no existan duplicados dentro de la misma tabla.", "Calcular automáticamente los promedios numéricos.", "Establecer un vínculo entre los datos de dos tablas distintas.", "Definir el límite de caracteres de una columna de texto."], "correct": 2, "explanation": "La clave foránea sirve como puente relacional hacia la clave principal de otra tabla."}, {"q": "Si se define un campo como 'varchar(20)'", "hint": "¿qué restricción se está aplicando?", "options": ["Considere qué representa el número entre paréntesis después del tipo de dato de texto.", "El sistema asignará automáticamente 20 nombres diferentes.", "Solo se permiten 20 registros en toda la tabla.", "El campo debe contener exactamente 20 números."], "correct": 4, "explanation": "D. El texto puede tener hasta un máximo de 20 caracteres."}, {"q": "¿Qué concepto garantiza que un paquete solo llegue a una provincia válida existente en el sistema?", "hint": "Piense en la regla que impide tener 'hijos' huérfanos sin una referencia 'padre' válida.", "options": ["Integridad referencial a través de clave foránea.", "Cifrado de base de datos.", "Indexación por orden alfabético.", "Uso exclusivo del tipo de dato varchar."], "correct": 0, "explanation": "La clave foránea hacia la tabla provincias evita registrar paquetes asignados a provincias inexistentes."}, {"q": "En la evolución de las bases de datos, ¿cuál fue la transición inmediatamente posterior a los archivos planos?", "hint": "Recuerde los modelos tempranos de almacenamiento estructurado antes del modelo relacional.", "options": ["Bases de datos NoSQL", "Bases de datos basadas en la nube", "Modelos Jerárquico y de Red", "Bases de datos Orientadas a Objetos"], "correct": 2, "explanation": "Históricamente"}, {"q": "Un paquete solo puede llegar a una provincia, pero a una provincia pueden llegar varios paquetes. ¿Cómo se clasifica esta relación desde la provincia hacia los paquetes?", "hint": "Determine cuál entidad es el origen único y cuál puede tener múltiples instancias relacionadas.", "options": ["Uno a uno (1:1)", "Muchos a muchos (M:N)", "Muchos a uno (N:1)", "Uno a muchos (1:N)"], "correct": 3, "explanation": "Desde el punto de vista de la provincia"}, {"q": "Al crear una tabla de camiones", "hint": "se desea guardar la 'matrícula'. ¿Por qué se considera este un dato de interés?", "options": ["Piense en qué atributo usaría para no confundir un camión con otro del mismo modelo.", "Porque es un dato que cambia todos los días.", "Porque permite identificar de forma única al camión.", "Porque determina la potencia del motor."], "correct": 15, "explanation": "B. Porque permite identificar de forma única al camión."}, {"q": "¿Qué representa el concepto de 'Multimedia' en el contexto de tipos de datos?", "hint": "Piense en contenidos visuales y auditivos que no son cadenas de texto planas.", "options": ["Tablas compuestas exclusivamente por números enteros.", "Archivos binarios que contienen imágenes", "audio o video.", "Campos que solo aceptan caracteres del alfabeto griego."], "correct": 19, "explanation": "B. Archivos binarios que contienen imágenes"}, {"q": "¿Cuál es la característica principal de los datos alfabéticos?", "hint": "Observe los tipos de caracteres permitidos según su nombre.", "options": ["Contienen exclusivamente letras del abecedario.", "Contienen una combinación obligatoria de números y símbolos.", "Solo pueden almacenar números enteros positivos.", "Están formados exclusivamente por operadores lógicos."], "correct": 0, "explanation": "Los campos puramente alfabéticos restringen su contenido a las letras"}, {"q": "¿Para qué sirve el campo 'numeric(3)' al definir la edad en una tabla de personas?", "hint": "Piense en cuántos dígitos como máximo puede llegar a tener la edad de un ser humano.", "options": ["Para asegurar que la persona tenga al menos 3 años.", "Para limitar el valor numérico a un máximo de tres dígitos de longitud.", "Para permitir que la edad contenga tres palabras descriptivas.", "Para que la base de datos ordene automáticamente a 3 personas."], "correct": 1, "explanation": "La indicación de precisión numérica (3) restringe la cantidad total de cifras que puede albergar el campo."}, {"q": "En el contexto de la base de datos de distribución", "hint": "¿por qué interesa guardar el código de la provincia además de su nombre?", "options": ["Considere qué pasaría si dos provincias tuvieran nombres muy parecidos o idénticos.", "Porque el nombre de la provincia es un dato prohibido.", "Porque los códigos ocupan más espacio que los nombres.", "Para tener un identificador estándar y evitar ambigüedades."], "correct": 15, "explanation": "C. Para tener un identificador estándar y evitar ambigüedades."}, {"q": "¿Qué modelo de base de datos se describe como una evolución que incluye la capacidad de manejar objetos directamente?", "hint": "Identifique el paradigma informático que combina datos con comportamiento o métodos.", "options": ["Modelo Plano.", "Modelo Jerárquico.", "Modelo Orientado a Objetos.", "Modelo Tabular Clásico."], "correct": 2, "explanation": "Este modelo integra los conceptos de la programación orientada a objetos directamente en el motor de almacenamiento de datos."}, {"q": "¿Cómo se define la relación entre un Camionero y las Provincias a través de los Paquetes?", "hint": "Considere cómo un camionero puede llegar a varias provincias repartiendo diferentes paquetes y viceversa.", "options": ["Una relación directa e indivisible de uno a uno.", "Una relación indirecta de muchos a muchos.", "Una relación que no se puede representar en bases de datos.", "Una relación jerárquica de subordinación laboral."], "correct": 1, "explanation": "Un camionero entrega múltiples paquetes que van a distintas provincias"}, {"q": "¿Cuál es la principal ventaja de extraer conclusiones de la información almacenada?", "hint": "Reflexione sobre el beneficio estratégico que busca toda entidad al procesar sus datos.", "options": ["Aumentar innecesariamente el tamaño del disco duro.", "Facilitar la toma fundamentada de decisiones operativas y estratégicas.", "Eliminar todos los registros antiguos de la empresa.", "Evitar que los usuarios accedan a las consultas SQL."], "correct": 1, "explanation": "El propósito final de transformar datos en información radica en guiar decisiones con respaldo cuantitativo."}, {"q": "En la tabla 'personas', si quisiéramos añadir una foto de cada persona, ¿qué categoría de dato estaríamos utilizando?", "hint": "Identifique si una imagen corresponde a texto", "options": ["número o a otro formato de medios.", "Numérico", "Alfanumérico", "Multimedia"], "correct": 1, "explanation": "C. Multimedia"}, {"q": "¿Qué atributo de los camiones se refiere a la capacidad de fuerza de su motor?", "hint": "Busque la palabra técnica que mide el desempeño energético del vehículo.", "options": ["Potencia", "Matrícula", "Tipo", "Modelo"], "correct": 0, "explanation": "La potencia es el atributo técnico mencionado que define el rendimiento motor del vehículo."}, {"q": "¿Por qué se dice que los datos son 'hechos sin procesar'?", "hint": "Considere la analogía de los ingredientes crudos antes de cocinar un plato.", "options": ["Porque solo existen en papel antes de entrar a la computadora.", "Porque siempre deben ser números secretos.", "Porque aún no han sido interpretados para darles un significado útil.", "Porque se borran después de ser leídos una vez."], "correct": 2, "explanation": "El dato por sí solo es neutro; requiere contexto y organización para transmitir un mensaje o 'información'."}, {"q": "¿Cuál es la característica de la relación entre un Camionero y un Paquete según el texto?", "hint": "Busque la restricción específica impuesta sobre la distribución de cada paquete individual.", "options": ["Un camionero solo puede distribuir un paquete en toda su carrera.", "Un paquete solo puede ser distribuido por un camionero.", "Cualquier persona puede distribuir paquetes sin estar registrada.", "Los paquetes se distribuyen solos sin necesidad de camioneros."], "correct": 1, "explanation": "Esta es una regla de integridad del negocio que define la exclusividad de la responsabilidad sobre el paquete."}, {"q": "¿Qué tipo de dato sería más apropiado para almacenar la dirección de una persona (ej. 'Alborada')?", "hint": "Analice si una dirección común combina letras o requiere solo números estrictos.", "options": ["Solo numérico entero.", "Texto / Alfanumérico (varchar).", "Fecha y hora.", "Binario booleano."], "correct": 1, "explanation": "Las direcciones combinan nombres de calles"}, {"q": "En la evolución de las bases de datos, ¿qué característica define al modelo Relacional?", "hint": "Piense en la estructura básica popularizada por Edgar F. Codd consistente en filas y columnas.", "options": ["La estructura basada exclusivamente en documentos JSON.", "La organización de los datos en tablas con relaciones lógicas.", "La ausencia total de identificadores únicos o claves primarias.", "La imposibilidad de ejecutar consultas mediante lenguaje SQL."], "correct": 1, "explanation": "El modelo relacional estructura la información en tablas (relaciones) compuestas por filas y columnas vinculadas entre sí."}, {"q": "Al definir la tabla 'personas', se especificó 'nombre - texto, hasta 20 letras'. ¿Cuál es el riesgo de ingresar un nombre de 25 letras?", "hint": "Considere qué sucede en un sistema informático cuando se excede la longitud declarada para un campo.", "options": ["El sistema reiniciará todo el servidor.", "El dato puede ser truncado o rechazado por exceder la longitud máxima permitida.", "El nombre se duplicará automáticamente en otra columna.", "El tipo de dato se transformará instantáneamente en numérico."], "correct": 1, "explanation": "Al superar la capacidad máxima fijada en varchar"}, {"q": "¿Qué significa que una base de datos sea una 'colección organizada de forma sistemática'?", "hint": "Piense en el orden y método que se sigue para estructurar los elementos para su fácil recuperación.", "options": ["Que los datos se guardan aleatoriamente según van llegando.", "Que los datos siguen reglas de estructura y clasificación que permiten gestionarlos eficientemente.", "Que los datos solo pueden leerse una vez antes de destruirse.", "Que únicamente se permite guardar información en formato de audio."], "correct": 1, "explanation": "La organización sistemática implica un diseño metodológico que facilita la inserción"}, {"q": "¿Cuál es la relación de cardinalidad entre las Provincias y los Paquetes?", "hint": "Identifique cuántos destinos tiene un paquete y cuántas entregas puede recibir un destino.", "options": ["Muchos paquetes pueden llegar a una provincia (N:1).", "Una provincia solo puede recibir un paquete por día.", "No existe ninguna relación entre paquetes y provincias.", "Cada paquete debe llegar a todas las provincias del país."], "correct": 0, "explanation": "Una entidad 'Provincia' puede estar asociada con múltiples instancias de 'Paquete' que tienen ese destino."}, {"q": "¿Cuál es la sintaxis correcta para crear una columna que almacene nombres de hasta 20 caracteres en una tabla SQL?", "hint": "Considere la palabra clave que define caracteres variables.", "options": ["nombre text(20)", "nombre varchar(20)", "nombre char up to 20", "nombre numeric(20)"], "correct": 1, "explanation": "El tipo de dato 'varchar' seguido de un paréntesis define una cadena de caracteres de longitud variable con el límite especificado."}, {"q": "Si desea insertar un registro en la tabla 'personas' pero solo conoce la dirección y la edad, ¿es posible realizar el 'INSERT'?", "hint": "Recuerde cómo se pueden mapear valores específicos a columnas seleccionadas.", "options": ["No", "es obligatorio completar todos los campos definidos en la tabla.", "Sí", "especificando los nombres de los campos entre paréntesis antes de los valores."], "correct": 18, "explanation": "pero solo si los valores se insertan en el orden exacto de la creación de la tabla."}, {"q": "¿Qué comodín se debe utilizar con el operador 'LIKE' para representar una secuencia de caracteres desconocida de cualquier longitud?", "hint": "Piense en el símbolo de porcentaje comúnmente empleado en patrones de texto SQL.", "options": ["?", "%", "*", "#"], "correct": 1, "explanation": "El símbolo '%' en SQL se utiliza con el operador LIKE para representar cero"}, {"q": "Al utilizar la cláusula 'ORDER BY', ¿cuál es el comportamiento predeterminado si no se especifica si el orden es ascendente o descendente?", "hint": "Recuerde cuál es la orientación natural de ordenación si se omite 'DESC' o 'ASC'.", "options": ["Se ordenan de forma aleatoria.", "Se ordenan de manera ascendente por defecto.", "Se produce un error de sintaxis en la consulta.", "La consulta cancela el ordenamiento y los muestra sin clasificar."], "correct": 1, "explanation": "La cláusula ORDER BY asume ASC (ascendente) de manera predeterminada a menos que se indique explícitamente DESC."}, {"q": "¿Cuál de las siguientes funciones se utilizaría para determinar el valor promedio de una columna numérica?", "hint": "Identifique la abreviatura estándar en inglés para la palabra average.", "options": ["SUM()", "AVG()", "COUNT()", "MAX()"], "correct": 1, "explanation": "La función de agregación AVG() calcula la media aritmética de los valores contenidos en una columna específica."}, {"q": "De acuerdo con el modelo de distribución de paquetes", "hint": "¿cuál es la relación correcta entre un camionero y los paquetes?", "options": ["Considere quién es el único responsable de la entrega de un objeto específico.", "Un camionero distribuye muchos paquetes", "pero un paquete solo lo lleva un camionero.", "Un camionero solo puede llevar un paquete a la vez por viaje."], "correct": 21, "explanation": "No existe una relación directa entre el camionero y el paquete."}, {"q": "¿Qué información es de interés almacenar sobre las provincias a las que llegan los paquetes?", "hint": "Busque los identificadores básicos de una ubicación geográfica mencionados en el texto.", "options": ["El nombre del destinatario y la dirección de la provincia.", "La matrícula y el modelo de la provincia.", "La potencia y el tipo de clima de la provincia.", "El código de provincia y el nombre."], "correct": 3, "explanation": "El material fuente especifica estos dos atributos como los datos necesarios para identificar las provincias de destino."}, {"q": "En una consulta compleja de filtrado, ¿para qué serviría la instrucción `WHERE precio = (SELECT MAX(precio) FROM Ventas)`?", "hint": "Note que la subconsulta extrae un único valor que representa el tope superior de la tabla.", "options": ["Para borrar todos los registros excepto el más caro.", "Para listar el o los registros cuyo precio coincida con el valor más alto registrado en Ventas.", "Para cambiar todos los precios al valor más alto automáticamente.", "Para contar cuántos productos tienen un precio menor al promedio."], "correct": 1, "explanation": "La subconsulta devuelve el precio máximo absoluto y la consulta principal filtra aquellas filas que igualen dicho valor."}, {"q": "Según el texto, ¿qué atributos definen técnicamente a los camiones utilizados en la distribución?", "hint": "Revise las especificaciones mecánicas y de registro legal del vehículo.", "options": ["Matrícula", "modelo", "tipo y potencia.", "Código de provincia y destino del camión."], "correct": 12, "explanation": "color y cantidad de paquetes que puede cargar."}, {"q": "¿Cuál es la función del operador 'OR' en una cláusula 'WHERE'?", "hint": "Analice la lógica booleana de disyunción frente a la conjunción estricta.", "options": ["Exigir que todas las condiciones separadas por el operador se cumplan sin excepción.", "Permitir que el registro sea seleccionado si al menos una de las condiciones es verdadera.", "Invertir el resultado de la búsqueda descartando las coincidencias.", "Unir el resultado de dos tablas diferentes mediante una clave compartida."], "correct": 1, "explanation": "El operador lógico OR evalúa a verdadero siempre que al menos uno de los predicados evaluados sea verdadero."}];
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+const card = document.getElementById('quizCard');
+const qCounter = document.getElementById('qCounter');
+const scoreCounter = document.getElementById('scoreCounter');
+const progressFill = document.getElementById('progressFill');
+
+function render() {
+  if (current >= QUESTIONS.length) {
+    renderResult();
+    return;
+  }
+  answered = false;
+  const q = QUESTIONS[current];
+  qCounter.textContent = `Pregunta ${current + 1} de ${QUESTIONS.length}`;
+  scoreCounter.textContent = `Aciertos: ${score}`;
+  progressFill.style.width = `${(current / QUESTIONS.length) * 100}%`;
+
+  const letters = ['A', 'B', 'C', 'D'];
+  card.innerHTML = `
+    <p class="question-text">${q.q}</p>
+    <div class="hint">💡 Pista: ${q.hint}</div>
+    <div id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions"><button class="next" id="nextBtn">Siguiente →</button></div>
+  `;
+
+  const optionsDiv = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="tag">${letters[i]}.</span>${opt}`;
+    btn.onclick = () => selectAnswer(i);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function selectAnswer(i) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[current];
+  const buttons = document.querySelectorAll('.option');
+  buttons.forEach(b => b.disabled = true);
+
+  const isCorrect = i === q.correct;
+  if (isCorrect) score++;
+
+  buttons[i].classList.add(isCorrect ? 'correct' : 'incorrect');
+  if (!isCorrect) buttons[q.correct].classList.add('correct');
+
+  const feedback = document.getElementById('feedback');
+  feedback.className = `feedback show ${isCorrect ? 'ok' : 'bad'}`;
+  feedback.innerHTML = `<strong>${isCorrect ? '✅ ¡Correcto!' : '❌ Incorrecto'}</strong>${q.explanation}`;
+
+  scoreCounter.textContent = `Aciertos: ${score}`;
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'nextBtn') {
+    current++;
+    render();
+  }
+});
+
+function renderResult() {
+  progressFill.style.width = '100%';
+  qCounter.textContent = `Completado — ${QUESTIONS.length} preguntas`;
+  scoreCounter.textContent = `Aciertos: ${score}`;
+  const pct = Math.round((score / QUESTIONS.length) * 100);
+  let msg = 'Sigue practicando, ¡puedes mejorar!';
+  if (pct >= 90) msg = '¡Excelente dominio del tema!';
+  else if (pct >= 70) msg = '¡Buen trabajo, tienes una base sólida!';
+  else if (pct >= 50) msg = 'Vas bien, repasa los temas que fallaste.';
+
+  card.innerHTML = `
+    <div class="result">
+      <p>Resultado final</p>
+      <div class="score">${score} / ${QUESTIONS.length}</div>
+      <p>${pct}% de respuestas correctas</p>
+      <p>${msg}</p>
+      <button class="restart" id="restartBtn">Reiniciar cuestionario</button>
+    </div>
+  `;
+  document.getElementById('restartBtn').onclick = () => {
+    current = 0;
+    score = 0;
+    render();
+  };
+}
+
+render();
+</script>
+</body>
+</html>
